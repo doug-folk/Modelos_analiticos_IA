@@ -34,3 +34,5 @@ artifacts:
   label_mapping_path: artifacts/label_mapping.json
   vocabulary_preview_path: outputs/top_vocabulary.csv
   hyperparam_results_path: outputs/hparam_results.json
+  confusion_matrix_fig_path: outputs/confusion_matrix.png
+  distribution_fig_path: outputs/rating_distribution.png

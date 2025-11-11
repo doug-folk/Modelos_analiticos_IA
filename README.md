@@ -54,10 +54,10 @@ Os serviços montam o diretório do projeto (`.:/app`), logo todos os arquivos g
 
 O painel (`dashboard/app.py`) exibe:
 
-- KPIs (balanced accuracy, nº de reviews, nº de atrações)
-- Distribuição das notas por atração (Plotly)
-- Matriz de confusão e resumo por classe
-- Tabela de amostras com as previsões do modelo
-- Caixa de teste para classificar um novo texto
+- Hero + cartões em destaque (balanced accuracy, nº de reviews, nº de atrações)
+- Gráfico Plotly com filtro por nota via checkboxes ao lado do componente
+- Matriz de confusão estilizada com botão para download em PNG e resumo por classe
+- Aba de reviews com tabela filtrada, botão de download e caixa de teste para um novo texto
+- Aba específica para upload de CSV com gráfico da distribuição prevista e exportação dos resultados
 
-O layout usa paleta azul petróleo / coral e cartões customizados para manter estética refinada sem necessidade de deploy externo.
+Durante o treino, imagens prontas para relatórios são salvas em `outputs/` (`confusion_matrix.png`, `rating_distribution.png`), e o dashboard usa a mesma paleta azul petróleo/coral com abas para uma experiência refinada sem depender de deploy externo.

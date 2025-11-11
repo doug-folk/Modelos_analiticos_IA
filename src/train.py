@@ -8,6 +8,14 @@ from typing import Dict
 import joblib
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message="Using categorical units to plot",
+)
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -21,6 +29,48 @@ from .preprocess import PreprocessConfig, TextPreprocessor
 from .utils import ensure_directories, load_config, save_json
 
 LOGGER = logging.getLogger("trip_reviews.train")
+logging.getLogger("matplotlib.category").setLevel(logging.WARNING)
+
+
+def save_confusion_matrix_figure(cm_pct: np.ndarray, labels: list[int], path: str | None) -> None:
+    if not path:
+        return
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(6, 5))
+    sns.heatmap(
+        cm_pct,
+        annot=True,
+        fmt=".1f",
+        cmap="YlGnBu",
+        xticklabels=labels,
+        yticklabels=labels,
+        cbar_kws={"label": "%"},
+    )
+    plt.title("Matriz de Confusão (%)")
+    plt.xlabel("Prevista")
+    plt.ylabel("Real")
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=200)
+    plt.close()
+
+
+def save_distribution_figure(df: pd.DataFrame, label_column: str, path: str | None) -> None:
+    if not path:
+        return
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(8, 4))
+    series = df[label_column].astype(int)
+    order = sorted(series.unique())
+    plot_df = pd.DataFrame({label_column: series})
+    sns.countplot(data=plot_df, x=label_column, order=order, color="#0F4C75")
+    plt.title("Distribuição de Notas")
+    plt.xlabel("Nota")
+    plt.ylabel("Quantidade")
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=200)
+    plt.close()
 
 
 def load_dataset(path: Path) -> pd.DataFrame:
@@ -120,19 +170,24 @@ def build_pipeline(config: Dict) -> None:
     cm_pct = np.clip(cm_pct, 0, 100)
 
     artifacts_cfg = config["artifacts"]
-    hyperparam_path = artifacts_cfg.get("hyperparam_results_path")
-    ensure_directories(
-        [
-            artifacts_cfg["model_path"],
-            artifacts_cfg["vectorizer_path"],
-            artifacts_cfg["metrics_path"],
-            artifacts_cfg["confusion_matrix_path"],
-            artifacts_cfg["classification_report_path"],
-            artifacts_cfg["label_mapping_path"],
-            artifacts_cfg["vocabulary_preview_path"],
-            hyperparam_path if hyperparam_path else artifacts_cfg["metrics_path"],
-        ]
-    )
+    path_targets = [
+        artifacts_cfg["model_path"],
+        artifacts_cfg["vectorizer_path"],
+        artifacts_cfg["metrics_path"],
+        artifacts_cfg["confusion_matrix_path"],
+        artifacts_cfg["classification_report_path"],
+        artifacts_cfg["label_mapping_path"],
+        artifacts_cfg["vocabulary_preview_path"],
+    ]
+    for optional_key in (
+        "hyperparam_results_path",
+        "confusion_matrix_fig_path",
+        "distribution_fig_path",
+    ):
+        optional_path = artifacts_cfg.get(optional_key)
+        if optional_path:
+            path_targets.append(optional_path)
+    ensure_directories(path_targets)
 
     joblib.dump(best_model, artifacts_cfg["model_path"])
     joblib.dump(vectorizer, artifacts_cfg["vectorizer_path"])
@@ -145,6 +200,7 @@ def build_pipeline(config: Dict) -> None:
     }
     save_json(metrics, artifacts_cfg["metrics_path"])
     save_json(report, artifacts_cfg["classification_report_path"])
+    hyperparam_path = artifacts_cfg.get("hyperparam_results_path")
     if hyperparam_path:
         save_json({"results": grid_results}, hyperparam_path)
 
@@ -154,6 +210,11 @@ def build_pipeline(config: Dict) -> None:
         columns=[f"pred_{label}" for label in labels_sorted],
     )
     cm_df.to_csv(artifacts_cfg["confusion_matrix_path"], index=True)
+    save_confusion_matrix_figure(
+        cm_pct,
+        labels_sorted,
+        artifacts_cfg.get("confusion_matrix_fig_path"),
+    )
 
     label_mapping = {idx: label for idx, label in enumerate(labels_sorted)}
     save_json(label_mapping, artifacts_cfg["label_mapping_path"])
@@ -166,6 +227,12 @@ def build_pipeline(config: Dict) -> None:
         .head(50)
     )
     vocab_df.to_csv(artifacts_cfg["vocabulary_preview_path"], index=False)
+
+    save_distribution_figure(
+        df_processed,
+        config["label_column"],
+        artifacts_cfg.get("distribution_fig_path"),
+    )
 
 
 def parse_args() -> argparse.Namespace:
