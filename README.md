@@ -60,4 +60,4 @@ O painel (`dashboard/app.py`) exibe:
 - Aba de reviews com tabela filtrada, botão de download e caixa de teste para um novo texto
 - Aba específica para upload de CSV com gráfico da distribuição prevista e exportação dos resultados
 
-Durante o treino, imagens prontas para relatórios são salvas em `outputs/` (`confusion_matrix.png`, `rating_distribution.png`), e o dashboard usa a mesma paleta azul petróleo/coral com abas para uma experiência refinada sem depender de deploy externo.
+Durante o treino, imagens prontas para relatórios são salvas em `outputs/` (`confusion_matrix.png`, `rating_distribution.png`).
