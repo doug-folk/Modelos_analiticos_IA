@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  etl:
+    build: .
+    image: trip-reviews-local
+    command: ["python", "-m", "src.etl", "--config", "config/pipeline.yaml"]
+    volumes:
+      - ./:/app
+    environment:
+      - PYTHONPATH=/app
+
+  train:
+    image: trip-reviews-local
+    depends_on:
+      - etl
+    command: ["python", "-m", "src.train", "--config", "config/pipeline.yaml"]
+    volumes:
+      - ./:/app
+    environment:
+      - PYTHONPATH=/app
+
+  dashboard:
+    image: trip-reviews-local
+    command: [
+      "streamlit",
+      "run",
+      "dashboard/app.py",
+      "--server.address=0.0.0.0",
+      "--server.port=8501"
+    ]
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./:/app
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped

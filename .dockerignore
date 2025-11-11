@@ -1,0 +1,10 @@
+.venv
+__pycache__
+*.pyc
+artifacts
+outputs
+logs
+reports
+data/bronze
+data/silver
+.ipynb_checkpoints
